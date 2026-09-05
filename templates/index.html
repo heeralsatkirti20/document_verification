@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Verification</title>
+</head>
+
+<body>
+
+    <h1>Document Verification System</h1>
+
+    <p>Upload your document for verification.</p>
+
+    <input type="file" id="document">
+
+    <button onclick="verifyDocument()">
+        Verify Document
+    </button>
+
+    <h3>Verification Result</h3>
+
+    <p id="result"></p>
+
+
+    <script>
+
+        async function verifyDocument() {
+
+            const fileInput = document.getElementById("document");
+            const result = document.getElementById("result");
+
+            if (fileInput.files.length === 0) {
+                result.innerText = "Please select a document.";
+                return;
+            }
+
+            const formData = new FormData();
+
+            formData.append(
+                "document",
+                fileInput.files[0]
+            );
+
+            result.innerText = "Verifying...";
+
+            const response = await fetch("/verify", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+          if (data.success) {
+
+    let output =
+        "Document Type: " + data.document_type + "\n\n";
+
+    if (Object.keys(data.checks).length > 0) {
+
+        output += "Document Checks:\n";
+
+        for (const [field, found] of Object.entries(data.checks)) {
+
+            if (found) {
+                output += "✓ " + field + " found\n";
+            } else {
+                output += "✗ " + field + " missing\n";
+            }
+        }
+
+        output += "\n";
+
+        if (data.verified) {
+            output += "STATUS: VERIFICATION PASSED";
+        } else {
+            output += "STATUS: NEEDS REVIEW";
+        }
+    }
+
+    output += "\n\nExtracted Text:\n" + data.text;
+
+    result.innerText = output;
+
+} else {
+
+    result.innerText = data.message;
+
+}
+        }
+
+    </script>
+
+</body>
+</html>
