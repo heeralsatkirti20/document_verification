@@ -96,6 +96,10 @@ def verify():
 
         checks, verified = verify_driving_licence(extracted_text)
 
+    else:
+        checks = {"Document Type Recognized": False}
+        verified = False
+
     tampering_checks, tampering_suspected, ela_image_path = detect_tampering(
         file_path
     )
