@@ -8,9 +8,11 @@
 
     <h1>Document Verification System</h1>
 
-    <p>Upload your document for verification.</p>
-
+    <p>Upload document:</p>
     <input type="file" id="document">
+
+    <p>Upload live/selfie photo:</p>
+    <input type="file" id="livephoto">
 
     <button onclick="verifyDocument()">
         Verify Document
@@ -26,10 +28,16 @@
         async function verifyDocument() {
 
             const fileInput = document.getElementById("document");
+            const liveInput = document.getElementById("livephoto");
             const result = document.getElementById("result");
 
             if (fileInput.files.length === 0) {
                 result.innerText = "Please select a document.";
+                return;
+            }
+
+            if (liveInput.files.length === 0) {
+                result.innerText = "Please select a live/selfie photo.";
                 return;
             }
 
@@ -38,6 +46,11 @@
             formData.append(
                 "document",
                 fileInput.files[0]
+            );
+
+            formData.append(
+                "livephoto",
+                liveInput.files[0]
             );
 
             result.innerText = "Verifying...";
@@ -53,6 +66,17 @@
 
     let output =
         "Document Type: " + data.document_type + "\n\n";
+
+    output += "OVERALL RISK LEVEL: " + data.risk_level + " (" + data.risk_score + "/100)\n";
+
+    if (data.risk_reasons.length > 0) {
+        output += "Reasons:\n";
+        for (const reason of data.risk_reasons) {
+            output += "- " + reason + "\n";
+        }
+    }
+
+    output += "\n";    
 
     if (Object.keys(data.checks).length > 0) {
 
@@ -73,6 +97,40 @@
             output += "STATUS: VERIFICATION PASSED";
         } else {
             output += "STATUS: NEEDS REVIEW";
+        }
+    }
+
+    if (data.tampering_checks && Object.keys(data.tampering_checks).length > 0) {
+
+        output += "\n\nTampering Analysis:\n";
+
+        for (const [field, value] of Object.entries(data.tampering_checks)) {
+            output += field + ": " + value + "\n";
+        }
+
+        output += "\n";
+
+        if (data.tampering_suspected) {
+            output += "⚠ Tampering signs detected.";
+        } else {
+            output += "✓ No tampering signs detected.";
+        }
+    }
+
+    if (data.face_checks && Object.keys(data.face_checks).length > 0) {
+
+        output += "\n\nFace Verification:\n";
+
+        for (const [field, value] of Object.entries(data.face_checks)) {
+            output += field + ": " + value + "\n";
+        }
+
+        output += "\n";
+
+        if (data.face_match) {
+            output += "✓ Face matches document.";
+        } else {
+            output += "⚠ Face does NOT match document.";
         }
     }
 
