@@ -1,40 +1,91 @@
-def calculate_risk_score(document_verified, tampering_suspected, face_match):
-    """
-    Combines results from Module 2 (validation), Module 3 (tampering),
-    and Module 4 (face verification) into one overall risk score.
+def calculate_risk_score(
+    document_verified,
+    tampering_suspected,
+    blacklisted,
+    tampering_reasons=None
+):
 
-    Higher score = higher risk. Each module contributes points
-    only if something looks wrong.
-    """
+    score = 0
 
-    risk_points = 0
     reasons = []
 
-    # Module 2: Document validation failed
+    # --------------------------------------------------------
+    # DOCUMENT VALIDATION
+    # --------------------------------------------------------
+
     if not document_verified:
-        risk_points += 30
-        reasons.append("Document fields/format did not fully validate")
 
-    # Module 3: Tampering suspected
+        score += 30
+
+        reasons.append(
+            "One or more document validation checks failed."
+        )
+
+    # --------------------------------------------------------
+    # TAMPERING
+    # --------------------------------------------------------
+
     if tampering_suspected:
-        risk_points += 35
-        reasons.append("Signs of tampering detected (editing/metadata)")
 
-    # Module 4: Face does not match
-    if not face_match:
-        risk_points += 35
-        reasons.append("Face does not match document photo")
+        score += 40
 
-    # Decide risk level based on total points
-    if risk_points == 0:
-        risk_level = "LOW"
-    elif risk_points <= 40:
-        risk_level = "MEDIUM"
+        if tampering_reasons:
+
+            reasons.extend(
+                tampering_reasons
+            )
+
+        else:
+
+            reasons.append(
+                "Possible document tampering detected."
+            )
+
+    # --------------------------------------------------------
+    # BLACKLIST
+    # --------------------------------------------------------
+
+    if blacklisted:
+
+        score += 50
+
+        reasons.append(
+            "An identifier matched the demo blacklist."
+        )
+
+    # --------------------------------------------------------
+    # LIMIT SCORE
+    # --------------------------------------------------------
+
+    score = min(
+        score,
+        100
+    )
+
+    # --------------------------------------------------------
+    # RISK LEVEL
+    # --------------------------------------------------------
+
+    if score < 25:
+
+        level = "LOW"
+
+    elif score < 60:
+
+        level = "MEDIUM"
+
     else:
-        risk_level = "HIGH"
+
+        level = "HIGH"
 
     return {
-        "risk_score": risk_points,
-        "risk_level": risk_level,
-        "reasons": reasons
+
+        "risk_score":
+            score,
+
+        "risk_level":
+            level,
+
+        "reasons":
+            reasons
     }

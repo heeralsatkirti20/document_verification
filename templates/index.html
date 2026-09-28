@@ -1,151 +1,597 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Document Verification</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>AI Document Screening System</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
-    <h1>Document Verification System</h1>
+<div class="app-container">
 
-    <p>Upload document:</p>
-    <input type="file" id="document">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-    <p>Upload live/selfie photo:</p>
-    <input type="file" id="livephoto">
+        <div class="brand">
+            <div class="brand-icon">🛡</div>
 
-    <button onclick="verifyDocument()">
-        Verify Document
-    </button>
+            <div>
+                <h2>DOCUREX</h2>
+                <span>AI SCREENING SYSTEM</span>
+            </div>
+        </div>
 
-    <h3>Verification Result</h3>
+        <nav>
 
-    <p id="result"></p>
+            <a href="/" class="nav-item active">
+                <span>⌂</span>
+                Screening
+            </a>
+
+            <a href="/logs" class="nav-item">
+                <span>◷</span>
+                Verification Logs
+            </a>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+
+            <div class="system-status">
+                <span class="status-dot"></span>
+
+                <div>
+                    <strong>System Online</strong>
+                    <small>Screening engine ready</small>
+                </div>
+            </div>
+
+        </div>
+
+    </aside>
 
 
-    <script>
+    <!-- MAIN -->
+    <main class="main-content">
 
-        async function verifyDocument() {
+        <!-- HEADER -->
+        <header class="topbar">
 
-            const fileInput = document.getElementById("document");
-            const liveInput = document.getElementById("livephoto");
-            const result = document.getElementById("result");
+            <div>
+                <p class="eyebrow">BORDER SECURITY / DOCUMENT INTELLIGENCE</p>
 
-            if (fileInput.files.length === 0) {
-                result.innerText = "Please select a document.";
-                return;
-            }
+                <h1>AI Document Screening</h1>
 
-            if (liveInput.files.length === 0) {
-                result.innerText = "Please select a live/selfie photo.";
-                return;
-            }
+                <p class="subtitle">
+                    Analyze identity and travel documents for potential
+                    anomalies, validation failures and risk indicators.
+                </p>
+            </div>
 
-            const formData = new FormData();
+            <div class="header-status">
+                <span class="status-dot"></span>
+                ENGINE READY
+            </div>
 
-            formData.append(
-                "document",
-                fileInput.files[0]
-            );
+        </header>
 
-            formData.append(
-                "livephoto",
-                liveInput.files[0]
-            );
 
-            result.innerText = "Verifying...";
+        <!-- DISCLAIMER -->
+        <div class="disclaimer">
 
-            const response = await fetch("/verify", {
-                method: "POST",
-                body: formData
-            });
+            <span>ⓘ</span>
 
-            const data = await response.json();
+            <div>
+                <strong>Prototype Screening System</strong>
 
-          if (data.success) {
+                <p>
+                    Results are indicative and should be verified by
+                    authorized personnel. This system does not establish
+                    the authenticity of a real government document.
+                </p>
+            </div>
 
-    let output =
-        "Document Type: " + data.document_type + "\n\n";
+        </div>
 
-    output += "OVERALL RISK LEVEL: " + data.risk_level + " (" + data.risk_score + "/100)\n";
 
-    if (data.risk_reasons.length > 0) {
-        output += "Reasons:\n";
-        for (const reason of data.risk_reasons) {
-            output += "- " + reason + "\n";
-        }
-    }
+        <!-- UPLOAD SECTION -->
+        <section class="upload-card">
 
-    output += "\n";    
+            <div class="section-heading">
 
-    if (Object.keys(data.checks).length > 0) {
+                <div>
+                    <span class="section-number">01</span>
 
-        output += "Document Checks:\n";
+                    <div>
+                        <h2>Upload Document</h2>
 
-        for (const [field, found] of Object.entries(data.checks)) {
+                        <p>
+                            Upload one JPG, JPEG or PNG document for screening.
+                        </p>
+                    </div>
+                </div>
 
-            if (found) {
-                output += "✓ " + field + " found\n";
-            } else {
-                output += "✗ " + field + " missing\n";
-            }
-        }
+            </div>
 
-        output += "\n";
 
-        if (data.verified) {
-            output += "STATUS: VERIFICATION PASSED";
-        } else {
-            output += "STATUS: NEEDS REVIEW";
-        }
-    }
+            <form id="screenForm">
 
-    if (data.tampering_checks && Object.keys(data.tampering_checks).length > 0) {
+                <div
+                    class="drop-zone"
+                    id="dropZone"
+                >
 
-        output += "\n\nTampering Analysis:\n";
+                    <input
+                        type="file"
+                        id="documentInput"
+                        name="document"
+                        accept=".jpg,.jpeg,.png"
+                        hidden
+                    >
 
-        for (const [field, value] of Object.entries(data.tampering_checks)) {
-            output += field + ": " + value + "\n";
-        }
+                    <div
+                        class="upload-content"
+                        id="uploadContent"
+                    >
 
-        output += "\n";
+                        <div class="upload-icon">
+                            ↑
+                        </div>
 
-        if (data.tampering_suspected) {
-            output += "⚠ Tampering signs detected.";
-        } else {
-            output += "✓ No tampering signs detected.";
-        }
-    }
+                        <h3>Drop your document here</h3>
 
-    if (data.face_checks && Object.keys(data.face_checks).length > 0) {
+                        <p>
+                            or click to browse from your computer
+                        </p>
 
-        output += "\n\nFace Verification:\n";
+                        <span class="file-types">
+                            JPG • JPEG • PNG • MAX 10 MB
+                        </span>
 
-        for (const [field, value] of Object.entries(data.face_checks)) {
-            output += field + ": " + value + "\n";
-        }
+                    </div>
 
-        output += "\n";
 
-        if (data.face_match) {
-            output += "✓ Face matches document.";
-        } else {
-            output += "⚠ Face does NOT match document.";
-        }
-    }
+                    <div
+                        class="selected-file"
+                        id="selectedFile"
+                        style="display:none;"
+                    >
 
-    output += "\n\nExtracted Text:\n" + data.text;
+                        <div class="file-icon">
+                            ▣
+                        </div>
 
-    result.innerText = output;
+                        <div class="file-details">
 
-} else {
+                            <strong id="fileName">
+                                document.jpg
+                            </strong>
 
-    result.innerText = data.message;
+                            <span id="fileSize">
+                                0 KB
+                            </span>
 
-}
-        }
+                        </div>
 
-    </script>
+                        <button
+                            type="button"
+                            id="removeFile"
+                            class="remove-file"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+                </div>
+
+
+                <div class="action-row">
+
+                    <button
+                        type="submit"
+                        id="screenButton"
+                        class="primary-button"
+                    >
+                        <span>⌕</span>
+                        START SCREENING
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- SCANNING -->
+        <section
+            class="scanning-card"
+            id="scanningCard"
+            style="display:none;"
+        >
+
+            <div class="scanner-animation">
+
+                <div class="scanner-ring">
+                    <div class="scanner-core">
+                        AI
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="scanning-info">
+
+                <p class="eyebrow">AI ANALYSIS IN PROGRESS</p>
+
+                <h2 id="scanTitle">
+                    Initializing screening engine...
+                </h2>
+
+                <p id="scanDescription">
+                    Preparing document analysis.
+                </p>
+
+                <div class="progress-container">
+
+                    <div
+                        class="progress-bar"
+                        id="progressBar"
+                    ></div>
+
+                </div>
+
+                <div class="scan-percent" id="scanPercent">
+                    0%
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ERROR -->
+        <div
+            id="errorBox"
+            class="error-box"
+            style="display:none;"
+        ></div>
+
+
+        <!-- RESULTS -->
+        <section
+            id="resultsSection"
+            style="display:none;"
+        >
+
+            <div class="results-header">
+
+                <div>
+
+                    <span class="section-number">
+                        02
+                    </span>
+
+                    <h2>
+                        Screening Results
+                    </h2>
+
+                </div>
+
+                <button
+                    class="secondary-button"
+                    id="newScreening"
+                >
+                    + NEW SCREENING
+                </button>
+
+            </div>
+
+
+            <!-- SUMMARY CARDS -->
+            <div class="summary-grid">
+
+                <!-- DOCUMENT TYPE -->
+                <div class="summary-card">
+
+                    <span class="card-label">
+                        DOCUMENT TYPE
+                    </span>
+
+                    <strong
+                        id="resultDocumentType"
+                    >
+                        —
+                    </strong>
+
+                    <span class="card-subtext">
+                        AI classification
+                    </span>
+
+                </div>
+
+
+                <!-- RISK -->
+                <div class="summary-card risk-card">
+
+                    <span class="card-label">
+                        SCREENING RISK
+                    </span>
+
+                    <strong
+                        id="resultRisk"
+                    >
+                        —
+                    </strong>
+
+                    <span
+                        class="card-subtext"
+                        id="resultRiskScore"
+                    >
+                        Score: —
+                    </span>
+
+                </div>
+
+
+                <!-- BLACKLIST -->
+                <div class="summary-card">
+
+                    <span class="card-label">
+                        BLACKLIST
+                    </span>
+
+                    <strong
+                        id="resultBlacklist"
+                    >
+                        —
+                    </strong>
+
+                    <span class="card-subtext">
+                        Identifier database check
+                    </span>
+
+                </div>
+
+
+                <!-- TAMPERING -->
+                <div class="summary-card">
+
+                    <span class="card-label">
+                        TAMPERING
+                    </span>
+
+                    <strong
+                        id="resultTampering"
+                    >
+                        —
+                    </strong>
+
+                    <span class="card-subtext">
+                        Multi-signal image analysis
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <!-- VALIDATION -->
+            <div class="result-panel">
+
+                <div class="panel-heading">
+
+                    <div>
+                        <span class="panel-number">
+                            A
+                        </span>
+
+                        <div>
+                            <h3>Document Validation</h3>
+
+                            <p>
+                                Structural and field-level checks
+                            </p>
+                        </div>
+                    </div>
+
+                    <span
+                        id="validationStatus"
+                        class="result-badge"
+                    >
+                        —
+                    </span>
+
+                </div>
+
+                <div
+                    id="validationGrid"
+                    class="checks-grid"
+                ></div>
+
+            </div>
+
+
+            <!-- TAMPERING -->
+            <div class="result-panel">
+
+                <div class="panel-heading">
+
+                    <div>
+                        <span class="panel-number">
+                            B
+                        </span>
+
+                        <div>
+                            <h3>Tampering Analysis</h3>
+
+                            <p>
+                                ELA, localized anomalies, metadata and
+                                image sharpness signals
+                            </p>
+                        </div>
+                    </div>
+
+                    <span
+                        id="tamperingStatus"
+                        class="result-badge"
+                    >
+                        —
+                    </span>
+
+                </div>
+
+                <div
+                    id="tamperingGrid"
+                    class="checks-grid"
+                ></div>
+
+            </div>
+
+
+            <!-- RISK REASONS -->
+            <div class="result-panel">
+
+                <div class="panel-heading">
+
+                    <div>
+                        <span class="panel-number">
+                            C
+                        </span>
+
+                        <div>
+                            <h3>Risk Assessment</h3>
+
+                            <p>
+                                Transparent reasons contributing to the
+                                screening score
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div
+                    id="riskReasons"
+                    class="risk-reasons"
+                ></div>
+
+            </div>
+
+
+            <!-- OCR -->
+            <div class="result-panel">
+
+                <div class="panel-heading">
+
+                    <div>
+                        <span class="panel-number">
+                            D
+                        </span>
+
+                        <div>
+                            <h3>OCR Extraction</h3>
+
+                            <p>
+                                Text detected from the uploaded document
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <pre
+                    id="ocrText"
+                    class="ocr-box"
+                >No text extracted.</pre>
+
+            </div>
+
+
+            <!-- OPTIONAL FACE -->
+            <div class="face-panel">
+
+                <div>
+
+                    <div class="face-panel">
+
+    <div>
+
+        <span class="optional-label">
+            OPTIONAL MODULE
+        </span>
+
+        <h3>
+            Face Verification
+        </h3>
+
+        <p>
+            Upload a live photograph to perform a prototype
+            comparison with the face detected in the document.
+        </p>
+
+        <div style="margin-top: 18px;">
+
+            <label
+                for="livephoto"
+                class="secondary-button"
+                style="display:inline-flex; cursor:pointer;"
+            >
+                📷 SELECT LIVE PHOTO
+            </label>
+
+            <input
+                type="file"
+                id="livephoto"
+                name="livephoto"
+                accept=".jpg,.jpeg,.png"
+                hidden
+            >
+
+            <span
+                id="livePhotoName"
+                style="margin-left:12px;"
+            >
+                No photo selected
+            </span>
+
+        </div>
+
+        <p
+            style="
+                margin-top:12px;
+                font-size:12px;
+                opacity:0.7;
+            "
+        >
+            Optional. Use a suitable synthetic/demo image
+            for prototype testing.
+        </p>
+
+    </div>
+
+    <span class="coming-soon">
+        OPTIONAL
+    </span>
+
+</div>
+
+                   
+
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
 
 </body>
 </html>

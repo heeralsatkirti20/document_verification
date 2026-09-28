@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Verification Logs</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+
+</head>
+
+
+<body>
+
+<div class="app-container">
+
+    <!-- SIDEBAR -->
+
+    <aside class="sidebar">
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🛡
+            </div>
+
+            <div>
+
+                <h2>
+                    DOCUREX
+                </h2>
+
+                <span>
+                    AI SCREENING SYSTEM
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav>
+
+            <a
+                href="/"
+                class="nav-item"
+            >
+                <span>⌂</span>
+                Screening
+            </a>
+
+
+            <a
+                href="/logs"
+                class="nav-item active"
+            >
+                <span>◷</span>
+                Verification Logs
+            </a>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <div>
+
+                    <strong>
+                        System Online
+                    </strong>
+
+                    <small>
+                        Screening engine ready
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+
+    <main class="main-content">
+
+        <header class="topbar">
+
+            <div>
+
+                <p class="eyebrow">
+                    BORDER SECURITY / DOCUMENT INTELLIGENCE
+                </p>
+
+                <h1>
+                    Verification Logs
+                </h1>
+
+                <p class="subtitle">
+                    Historical screening activity recorded
+                    by the prototype system.
+                </p>
+
+            </div>
+
+
+            <div class="header-status">
+
+                <span class="status-dot"></span>
+
+                ENGINE READY
+
+            </div>
+
+        </header>
+
+
+        <div class="disclaimer">
+
+            <span>
+                ⓘ
+            </span>
+
+            <div>
+
+                <strong>
+                    Prototype Records
+                </strong>
+
+                <p>
+                    These records are generated from
+                    demonstration documents and are
+                    intended for software testing only.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <section class="upload-card">
+
+            <div class="section-heading">
+
+                <div>
+
+                    <span class="section-number">
+                        01
+                    </span>
+
+                    <div>
+
+                        <h2>
+                            Screening History
+                        </h2>
+
+                        <p>
+                            Previous document screening results
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {% if logs %}
+
+            <div
+                style="
+                    overflow-x:auto;
+                    margin-top:25px;
+                "
+            >
+
+                <table
+                    style="
+                        width:100%;
+                        border-collapse:collapse;
+                    "
+                >
+
+                    <thead>
+
+                        <tr>
+
+                            <th
+                                style="
+                                    text-align:left;
+                                    padding:14px;
+                                "
+                            >
+                                TIME
+                            </th>
+
+                            <th
+                                style="
+                                    text-align:left;
+                                    padding:14px;
+                                "
+                            >
+                                DOCUMENT
+                            </th>
+
+                            <th
+                                style="
+                                    text-align:left;
+                                    padding:14px;
+                                "
+                            >
+                                RISK
+                            </th>
+
+                            <th
+                                style="
+                                    text-align:left;
+                                    padding:14px;
+                                "
+                            >
+                                SCORE
+                            </th>
+
+                            <th
+                                style="
+                                    text-align:left;
+                                    padding:14px;
+                                "
+                            >
+                                REASONS
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for log in logs %}
+
+                        <tr>
+
+                            <td
+                                style="
+                                    padding:14px;
+                                "
+                            >
+                                {{ log.timestamp }}
+                            </td>
+
+
+                            <td
+                                style="
+                                    padding:14px;
+                                "
+                            >
+                                <strong>
+                                    {{ log.document_type }}
+                                </strong>
+                            </td>
+
+
+                            <td
+                                style="
+                                    padding:14px;
+                                "
+                            >
+
+                                {% if log.risk_level == "LOW" %}
+
+                                    <strong>
+                                        LOW
+                                    </strong>
+
+                                {% elif log.risk_level == "MEDIUM" %}
+
+                                    <strong>
+                                        MEDIUM
+                                    </strong>
+
+                                {% else %}
+
+                                    <strong>
+                                        HIGH
+                                    </strong>
+
+                                {% endif %}
+
+                            </td>
+
+
+                            <td
+                                style="
+                                    padding:14px;
+                                "
+                            >
+
+                                {{ log.risk_score }}
+                                / 100
+
+                            </td>
+
+
+                            <td
+                                style="
+                                    padding:14px;
+                                "
+                            >
+
+                                {% if log.reasons %}
+
+                                    {% for reason in log.reasons %}
+
+                                        <div>
+                                            • {{ reason }}
+                                        </div>
+
+                                    {% endfor %}
+
+                                {% else %}
+
+                                    <span>
+                                        No risk indicators
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+            {% else %}
+
+            <div
+                style="
+                    padding:40px;
+                    text-align:center;
+                "
+            >
+
+                <h3>
+                    No verification records yet
+                </h3>
+
+                <p>
+                    Screen a document to create the
+                    first verification log.
+                </p>
+
+            </div>
+
+            {% endif %}
+
+
+            <div
+                style="
+                    margin-top:30px;
+                "
+            >
+
+                <a
+                    href="/"
+                    class="primary-button"
+                    style="
+                        text-decoration:none;
+                        display:inline-flex;
+                    "
+                >
+                    ← BACK TO SCREENING
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+</body>
+
+</html>

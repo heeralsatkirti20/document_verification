@@ -2,228 +2,276 @@ import re
 
 
 def identify_document(text):
-    text_lower = text.lower()
-
-    # Aadhaar
-    if (
-        "aadhaar" in text_lower
-        or "aadhar" in text_lower
-        or "unique identification" in text_lower
-    ):
-        return "Aadhaar"
+    text_upper = text.upper()
 
     # Passport
-    if (
-        "passport" in text_lower
-        or "republic of india" in text_lower
-    ):
+    if "PASSPORT" in text_upper:
         return "Passport"
 
     # Driving Licence
     if (
-        "driving licence" in text_lower
-        or "driving license" in text_lower
+        "DRIVING LICENCE" in text_upper
+        or "DRIVING LICENSE" in text_upper
+        or "DL NO" in text_upper
+        or "LICENCE NO" in text_upper
     ):
         return "Driving Licence"
+
+    # Visa
+    if (
+        "VISA" in text_upper
+        or "ENTRY PERMIT" in text_upper
+        or "STAY DURATION" in text_upper
+    ):
+        return "Visa"
+
+    # ID card
+    if (
+        "AADHAAR" in text_upper
+        or "UNIQUE IDENTIFICATION" in text_upper
+        or "DEMO ID CARD" in text_upper
+        or "IDENTITY CARD" in text_upper
+        or "ID CARD" in text_upper
+    ):
+        return "Aadhaar / ID"
 
     return "Unknown"
 
 
-# =========================================================
-# PASSPORT
-# =========================================================
+def find_date(text):
+    patterns = [
+        r"\b\d{2}[/-]\d{2}[/-]\d{4}\b",
+        r"\b\d{4}[/-]\d{2}[/-]\d{2}\b"
+    ]
 
-def verify_passport(text):
+    for pattern in patterns:
+        match = re.search(pattern, text)
+
+        if match:
+            return match.group()
+
+    return None
+
+
+def find_number(text):
+
+    patterns = [
+
+        # Demo passport number
+        r"\b[A-Z]\d{7}\b",
+
+        # Demo ID
+        r"\bDEMO-\d{4}-\d{4}\b",
+
+        # Demo driving licence
+        r"\bDL-DEMO-\d{5}\b",
+
+        # Demo visa
+        r"\bVISA-DEMO-\d{5}\b",
+
+        # General alphanumeric number
+        r"\b[A-Z]{1,3}[- ]?[A-Z0-9]{4,12}\b",
+
+        # 12 digit number
+        r"\b\d{4}[- ]?\d{4}[- ]?\d{4}\b",
+
+        # 8–12 digit number
+        r"\b\d{8,12}\b"
+    ]
+
+    for pattern in patterns:
+
+        match = re.search(
+            pattern,
+            text.upper()
+        )
+
+        if match:
+            return match.group()
+
+    return None
+
+
+def validate_document(
+    document_type,
+    text
+):
+
+    text_upper = text.upper()
+
     checks = {}
+    reasons = []
 
-    # Name
-    checks["Name"] = bool(
-        re.search(
-            r"\bname\b\s*:?\s*[A-Za-z][A-Za-z .'-]+",
-            text,
-            re.IGNORECASE
+    # =====================================================
+    # PASSPORT
+    # =====================================================
+
+    if document_type == "Passport":
+
+        checks["Passport keyword"] = (
+            "PASSPORT" in text_upper
         )
-    )
 
-    # Nationality
-    checks["Nationality"] = bool(
-        re.search(
-            r"\bnationality\b\s*:?\s*\S+",
-            text,
-            re.IGNORECASE
-        )
-    )
-
-    # Date of Birth
-    checks["Date of Birth"] = bool(
-        re.search(
-            r"date\s+of\s+birth\s*[-:]?\s*\d{2}/\d{2}/\d{4}",
-            text,
-            re.IGNORECASE
-        )
-    )
-
-    # Passport Number
-    passport_match = re.search(
-        r"\bpassport\b\s*(no|number)?\s*:?\s*[A-Z0-9]+",
-        text,
-        re.IGNORECASE
-    )
-
-    checks["Passport Number"] = bool(passport_match)
-
-    # Place of Birth
-    checks["Place of Birth"] = bool(
-        re.search(
-            r"place\s+of\s+birth\s*[-:]?\s*[A-Za-z]",
-            text,
-            re.IGNORECASE
-        )
-    )
-
-    # Date of Issue
-    checks["Date of Issue"] = bool(
-        re.search(
-            r"date\s+of\s+issue\s*[-:]?\s*\d{2}/\d{2}/\d{4}",
-            text,
-            re.IGNORECASE
-        )
-    )
-
-    # Date of Expiry
-    checks["Date of Expiry"] = bool(
-        re.search(
-            r"(date\s+of\s+expiry|expiry|expires?)\s*[-:]?\s*\d{2}/\d{2}/\d{4}",
-            text,
-            re.IGNORECASE
-        )
-    )
-
-    all_valid = all(checks.values())
-
-    return checks, all_valid
-
-
-def validate_passport(text):
-    checks = {}
-
-    # Passport number
-    passport_match = re.search(
-        r"\bpassport\b\s*(no|number)?\s*:?\s*([A-Z0-9]{6,10})",
-        text,
-        re.IGNORECASE
-    )
-
-    if passport_match:
-        passport_number = passport_match.group(2)
-
-        checks["Passport Number Format"] = bool(
-            re.fullmatch(
-                r"[A-Z0-9]{6,10}",
-                passport_number
+        checks["Name present"] = bool(
+            re.search(
+                r"\bNAME\b",
+                text_upper
             )
         )
+
+        checks["Date present"] = bool(
+            find_date(text)
+        )
+
+        checks["Passport number pattern"] = bool(
+            re.search(
+                r"\b[A-Z][A-Z0-9]{5,9}\b",
+                text_upper
+            )
+        )
+
+        checks["Nationality present"] = (
+            "NATIONALITY" in text_upper
+        )
+
+    # =====================================================
+    # DRIVING LICENCE
+    # =====================================================
+
+    elif document_type == "Driving Licence":
+
+        checks["Driving licence keyword"] = (
+            "DRIVING LICENCE" in text_upper
+            or
+            "DRIVING LICENSE" in text_upper
+        )
+
+        checks["Name present"] = (
+            "NAME" in text_upper
+        )
+
+        checks["Date present"] = bool(
+            find_date(text)
+        )
+
+        checks["Licence number pattern"] = bool(
+            find_number(text)
+        )
+
+        checks["Validity information"] = (
+            "VALID" in text_upper
+            or
+            "EXPIRY" in text_upper
+            or
+            "VALIDITY" in text_upper
+        )
+
+    # =====================================================
+    # VISA
+    # =====================================================
+
+    elif document_type == "Visa":
+
+        checks["Visa keyword"] = (
+            "VISA" in text_upper
+        )
+
+        checks["Date present"] = bool(
+            find_date(text)
+        )
+
+        checks["Visa number pattern"] = bool(
+            find_number(text)
+        )
+
+        checks["Entry information"] = (
+            "ENTRY" in text_upper
+            or
+            "ENTRY TYPE" in text_upper
+            or
+            "ENTRIES" in text_upper
+        )
+
+    # =====================================================
+    # ID CARD
+    # =====================================================
+
+    elif document_type == "Aadhaar / ID":
+
+        checks["Identification keyword"] = (
+            "AADHAAR" in text_upper
+            or
+            "UNIQUE IDENTIFICATION" in text_upper
+            or
+            "DEMO ID CARD" in text_upper
+            or
+            "IDENTITY CARD" in text_upper
+            or
+            "ID CARD" in text_upper
+        )
+
+        checks["Name present"] = (
+            "NAME" in text_upper
+        )
+
+        checks["Date present"] = bool(
+            find_date(text)
+        )
+
+        checks["ID number pattern"] = bool(
+            re.search(
+                r"\bDEMO-\d{4}-\d{4}\b",
+                text_upper
+            )
+            or
+            re.search(
+                r"\b\d{4}\s?\d{4}\s?\d{4}\b",
+                text_upper
+            )
+        )
+
+    # =====================================================
+    # UNKNOWN
+    # =====================================================
+
     else:
-        checks["Passport Number Format"] = False
 
-    # Date format
-    date_pattern = r"\d{2}/\d{2}/\d{4}"
+        checks[
+            "Recognized document type"
+        ] = False
 
-    dates = re.findall(
-        date_pattern,
-        text
-    )
-
-    # A normal passport sample should contain
-    # several dates.
-    checks["Valid Date Format"] = len(dates) >= 3
-
-    all_valid = all(checks.values())
-
-    return checks, all_valid
-
-
-# =========================================================
-# AADHAAR
-# =========================================================
-
-def verify_aadhaar(text):
-    checks = {}
-
-    # Name
-    checks["Name"] = bool(
-        re.search(
-            r"\bname\b\s*:?\s*[A-Za-z][A-Za-z .'-]+",
-            text,
-            re.IGNORECASE
+        reasons.append(
+            "The document type could not be recognized."
         )
-    )
 
-    # Date of Birth
-    checks["Date of Birth"] = bool(
-        re.search(
-            r"date\s+of\s+birth\s*[-:]?\s*\d{2}/\d{2}/\d{4}",
-            text,
-            re.IGNORECASE
+        return (
+            checks,
+            False,
+            reasons
         )
-    )
 
-    # Aadhaar number
-    aadhaar_match = re.search(
-        r"\b\d{4}\s?\d{4}\s?\d{4}\b",
-        text
-    )
+    # =====================================================
+    # FAILED CHECKS
+    # =====================================================
 
-    checks["Aadhaar Number"] = bool(aadhaar_match)
+    failed_checks = [
+        name
+        for name, passed in checks.items()
+        if not passed
+    ]
 
-    all_valid = all(checks.values())
+    for check in failed_checks:
 
-    return checks, all_valid
-
-
-# =========================================================
-# DRIVING LICENCE
-# =========================================================
-
-def verify_driving_licence(text):
-    checks = {}
-
-    # Name
-    checks["Name"] = bool(
-        re.search(
-            r"\bname\b\s*:?\s*[A-Za-z][A-Za-z .'-]+",
-            text,
-            re.IGNORECASE
+        reasons.append(
+            f"Validation check failed: {check}"
         )
+
+    valid = (
+        len(failed_checks) == 0
     )
 
-    # Date of Birth
-    checks["Date of Birth"] = bool(
-     re.search(
-        r"date\s+of\s+birth\s*[-:—–]?\s*\d{2}/\d{2}/\d{4}",
-        text,
-        re.IGNORECASE
-     )
+    return (
+        checks,
+        valid,
+        reasons
     )
-
-    # Licence number
-    licence_match = re.search(
-        r"\b(license|licence)\b\s*(no|number)?\s*:?\s*[A-Z0-9-]+",
-        text,
-        re.IGNORECASE
-    )
-
-    checks["Licence Number"] = bool(licence_match)
-
-    # Validity
-    checks["Validity"] = bool(
-        re.search(
-            r"(valid\s+until|validity|expiry|expires?)",
-            text,
-            re.IGNORECASE
-        )
-    )
-
-    all_valid = all(checks.values())
-
-    return checks, all_valid
