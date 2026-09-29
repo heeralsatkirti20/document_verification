@@ -1,11 +1,16 @@
 import os
 import cv2
 import numpy as np
+
 from PIL import Image, ImageChops, ImageEnhance
+from skimage.metrics import structural_similarity
 
 
 def calculate_ela(image_path, quality=90):
-    original = Image.open(image_path).convert("RGB")
+
+    original = Image.open(
+        image_path
+    ).convert("RGB")
 
     temp_path = os.path.join(
         os.path.dirname(image_path),
@@ -18,7 +23,9 @@ def calculate_ela(image_path, quality=90):
         quality=quality
     )
 
-    compressed = Image.open(temp_path).convert("RGB")
+    compressed = Image.open(
+        temp_path
+    ).convert("RGB")
 
     difference = ImageChops.difference(
         original,
@@ -41,7 +48,9 @@ def calculate_ela(image_path, quality=90):
         difference
     ).enhance(scale)
 
-    ela_array = np.array(ela_image)
+    ela_array = np.array(
+        ela_image
+    )
 
     ela_score = float(
         np.mean(ela_array)
@@ -52,13 +61,20 @@ def calculate_ela(image_path, quality=90):
     except:
         pass
 
-    return round(ela_score, 2)
+    return round(
+        ela_score,
+        2
+    )
 
 
 def localized_analysis(image_path):
-    image = cv2.imread(image_path)
+
+    image = cv2.imread(
+        image_path
+    )
 
     if image is None:
+
         return {
             "Localized Analysis Available": False,
             "Localized Max Difference": 0,
@@ -92,11 +108,13 @@ def localized_analysis(image_path):
         height,
         block_size
     ):
+
         for x in range(
             0,
             width,
             block_size
         ):
+
             block = difference[
                 y:y + block_size,
                 x:x + block_size
@@ -114,17 +132,22 @@ def localized_analysis(image_path):
 
     return {
         "Localized Analysis Available": True,
-        "Localized Max Difference": round(
-            max_difference,
-            2
-        ),
+
+        "Localized Max Difference":
+            round(
+                max_difference,
+                2
+            ),
+
         "Localized Suspicious":
             max_difference > 20
     }
 
 
 def metadata_analysis(image_path):
+
     try:
+
         image = Image.open(
             image_path
         )
@@ -135,6 +158,7 @@ def metadata_analysis(image_path):
         software_name = None
 
         if metadata:
+
             for value in metadata.values():
 
                 if not isinstance(
@@ -155,14 +179,17 @@ def metadata_analysis(image_path):
                 for software in editing_software:
 
                     if software in value_lower:
+
                         software_detected = True
                         software_name = software
+
                         break
 
                 if software_detected:
                     break
 
         return {
+
             "Metadata Present":
                 bool(metadata),
 
@@ -176,9 +203,14 @@ def metadata_analysis(image_path):
     except Exception:
 
         return {
+
             "Metadata Present": False,
-            "Editing Software Detected": False,
-            "Editing Software": None
+
+            "Editing Software Detected":
+                False,
+
+            "Editing Software":
+                None
         }
 
 
@@ -187,49 +219,36 @@ def reference_comparison(
     reference_path
 ):
 
+    empty_result = {
+
+        "Reference Comparison Available":
+            False,
+
+        "Reference Difference":
+            0,
+
+        "Reference Mean Difference":
+            0,
+
+        "Changed Pixel Percentage":
+            0,
+
+        "Largest Changed Region":
+            0,
+
+        "Reference Tampering Detected":
+            False
+    }
+
     if not reference_path:
-        return {
-            "Reference Comparison Available":
-                False,
 
-            "Reference Difference":
-                0,
-
-            "Reference Mean Difference":
-                0,
-
-            "Changed Pixel Percentage":
-                0,
-
-            "Largest Changed Region":
-                0,
-
-            "Reference Tampering Detected":
-                False
-        }
+        return empty_result
 
     if not os.path.exists(
         reference_path
     ):
-        return {
-            "Reference Comparison Available":
-                False,
 
-            "Reference Difference":
-                0,
-
-            "Reference Mean Difference":
-                0,
-
-            "Changed Pixel Percentage":
-                0,
-
-            "Largest Changed Region":
-                0,
-
-            "Reference Tampering Detected":
-                False
-        }
+        return empty_result
 
     image = cv2.imread(
         image_path
@@ -240,66 +259,90 @@ def reference_comparison(
     )
 
     if image is None or reference is None:
-        return {
-            "Reference Comparison Available":
-                False,
 
-            "Reference Difference":
-                0,
+        return empty_result
 
-            "Reference Mean Difference":
-                0,
+    # --------------------------------------------------
+    # Resize uploaded image to reference dimensions
+    # --------------------------------------------------
 
-            "Changed Pixel Percentage":
-                0,
-
-            "Largest Changed Region":
-                0,
-
-            "Reference Tampering Detected":
-                False
-        }
-
-    # Resize uploaded image to reference size
     image = cv2.resize(
         image,
         (
             reference.shape[1],
             reference.shape[0]
-        )
+        ),
+        interpolation=cv2.INTER_AREA
     )
 
-    # Reduce small compression/noise differences
-    image_blur = cv2.GaussianBlur(
+    # --------------------------------------------------
+    # Convert both images to grayscale
+    # --------------------------------------------------
+
+    image_gray = cv2.cvtColor(
         image,
-        (3, 3),
-        0
-    )
-
-    reference_blur = cv2.GaussianBlur(
-        reference,
-        (3, 3),
-        0
-    )
-
-    difference = cv2.absdiff(
-        image_blur,
-        reference_blur
-    )
-
-    gray_difference = cv2.cvtColor(
-        difference,
         cv2.COLOR_BGR2GRAY
     )
 
-    mean_difference = float(
-        np.mean(gray_difference)
+    reference_gray = cv2.cvtColor(
+        reference,
+        cv2.COLOR_BGR2GRAY
     )
 
-    # Threshold meaningful differences
+    # --------------------------------------------------
+    # Slight blur removes tiny JPEG compression noise
+    # --------------------------------------------------
+
+    image_gray = cv2.GaussianBlur(
+        image_gray,
+        (3, 3),
+        0
+    )
+
+    reference_gray = cv2.GaussianBlur(
+        reference_gray,
+        (3, 3),
+        0
+    )
+
+    # --------------------------------------------------
+    # STRUCTURAL SIMILARITY
+    #
+    # This is much more tolerant of:
+    # PNG -> JPEG
+    # JPEG compression
+    # small image noise
+    # slight camera/image processing differences
+    # --------------------------------------------------
+
+    similarity_score = structural_similarity(
+        reference_gray,
+        image_gray,
+        data_range=255
+    )
+
+    structural_difference = (
+        1 - similarity_score
+    ) * 100
+
+    # --------------------------------------------------
+    # Pixel difference for DISPLAY INFORMATION ONLY
+    #
+    # We do NOT use raw pixel difference alone to decide
+    # whether the document is tampered.
+    # --------------------------------------------------
+
+    difference = cv2.absdiff(
+        image_gray,
+        reference_gray
+    )
+
+    # Higher threshold prevents normal JPEG compression
+    # from being treated as a meaningful modification.
+
     _, threshold = cv2.threshold(
-        gray_difference,
-        25,
+        difference,
+        45,
         255,
         cv2.THRESH_BINARY
     )
@@ -311,11 +354,17 @@ def reference_comparison(
     total_pixels = threshold.size
 
     changed_percentage = (
+
         changed_pixels /
         total_pixels
+
         if total_pixels > 0
         else 0
     )
+
+    # --------------------------------------------------
+    # Find largest changed region
+    # --------------------------------------------------
 
     contours, _ = cv2.findContours(
         threshold,
@@ -332,29 +381,38 @@ def reference_comparison(
         )
 
         if area > largest_region:
+
             largest_region = area
 
-    reference_tampering = (
-        mean_difference > 1.0
-        or
-        changed_percentage > 0.10
-        or
-        largest_region > 300
+    # --------------------------------------------------
+    # REFERENCE TAMPERING DECISION
+    #
+    # SSIM is the main signal.
+    #
+    # 0.985 means 98.5% structural similarity.
+    #
+    # A normal PNG/JPEG conversion should normally remain
+    # highly structurally similar.
+    # --------------------------------------------------
+
+    reference_tampering = bool(
+        similarity_score < 0.985
     )
 
     return {
+
         "Reference Comparison Available":
             True,
 
         "Reference Difference":
             round(
-                mean_difference,
+                structural_difference,
                 2
             ),
 
         "Reference Mean Difference":
             round(
-                mean_difference,
+                structural_difference,
                 2
             ),
 
@@ -398,6 +456,7 @@ def detect_tampering(
     )
 
     checks = {
+
         "ELA Score":
             ela_score,
 
@@ -454,37 +513,56 @@ def detect_tampering(
         "Reference Tampering Detected":
             reference[
                 "Reference Tampering Detected"
-        ]
+            ]
     }
 
     tampering_reasons = []
 
     normal_signals = 0
 
+    # --------------------------------------------------
+    # ELA
+    # --------------------------------------------------
+
     if ela_score > 15:
+
         normal_signals += 1
 
         tampering_reasons.append(
             "Elevated ELA difference detected."
         )
 
+    # --------------------------------------------------
+    # Localized analysis
+    # --------------------------------------------------
+
     if localized[
         "Localized Suspicious"
     ]:
+
         normal_signals += 1
 
         tampering_reasons.append(
             "Localized image differences detected."
         )
 
+    # --------------------------------------------------
+    # Editing software metadata
+    # --------------------------------------------------
+
     if metadata[
         "Editing Software Detected"
     ]:
+
         normal_signals += 1
 
         tampering_reasons.append(
             "Image metadata indicates possible editing software."
         )
+
+    # --------------------------------------------------
+    # Reference comparison
+    # --------------------------------------------------
 
     reference_signal = reference[
         "Reference Tampering Detected"
@@ -496,15 +574,23 @@ def detect_tampering(
             "Uploaded document differs significantly from the clean demo reference."
         )
 
+    # --------------------------------------------------
+    # FINAL TAMPERING DECISION
+    # --------------------------------------------------
+
     tampering_suspected = (
+
         reference_signal
+
         or
+
         normal_signals >= 2
     )
 
     if tampering_suspected:
 
         if not tampering_reasons:
+
             tampering_reasons.append(
                 "Possible document tampering detected."
             )
